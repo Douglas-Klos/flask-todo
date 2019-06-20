@@ -11,6 +11,8 @@ app.secret_key = os.environ.get('SECRET_KEY').encode()
 
 @app.route('/all')
 def all_tasks():
+    if 'username' not in session:
+        return redirect(url_for('login'))
     return render_template('all.jinja2', tasks=Task.select())
 
 
@@ -24,6 +26,22 @@ def create():
         return redirect(url_for('all_tasks'))
     else:
         return render_template('create.jinja2')
+
+
+@app.route('/incomplete', methods=['GET', 'POST'])
+def incomplete_tasks():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        user = User.select().where(User.name == session['username']).get()
+        print(user)
+
+        Task.update(performed=datetime.now(), performed_by=user)\
+            .where(Task.id == request.form['task_id'])\
+            .execute()
+
+    return render_template('incomplete.jinja2', tasks=Task.select().where(Task.performed.is_null()))
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -41,21 +59,11 @@ def login():
         return render_template('login.jinja2')
 
 
-@app.route('/incomplete', methods=['GET', 'POST'])
-def incomplete_tasks():
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
-    if request.method == 'POST':
-        user = User.select().where(User.name == session['username']).get()
-
-        Task.update(performed=datetime.now(), performed_by=user)\
-            .where(Task.id == request.form['task_id'])\
-            .execute()
-
-    return render_template('incomplete.jinja2', tasks=Task.select().where(Task.performed.is_null()))
+def main():
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    main()
+    

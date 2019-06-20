@@ -11,7 +11,7 @@
             Not complete
         {% else %}
             Completed on {{ task.performed }}
-            by {{ task.performed_by }}
+            by {{ task.performed_by.name }}
         {% endif %}
     </li>
     {% endfor %}
